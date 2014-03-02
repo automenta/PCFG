@@ -141,15 +141,12 @@ public class ViterbiParsing {
         Node root = new Node(rootNode);
         ViterbiParse(rootNode, 0, sentenceTokens.length - 1, root);
         //Now the node parent is the head of the parse tree for the input sentence
-        PrintParseTree(root, "");
-        System.out.println("********");
-        
+        //PrintParseTree(root, "");
+
         //*************************************************//
         ArrayList<Subtrees> subtrees_list = extractSubsetOfSubtrees(root);
-        for(Subtrees subtreesSubSet:subtrees_list)
-        {
-            for(Node node: subtreesSubSet.getSubtrees())
-            {
+        for (Subtrees subtreesSubSet : subtrees_list) {
+            for (Node node : subtreesSubSet.getSubtrees()) {
                 PrintParseTree(node, "");
             }
             System.out.println("----");
@@ -158,6 +155,7 @@ public class ViterbiParsing {
     }
 
     public static ArrayList<Subtrees> extractSubsetOfSubtrees(Node root) {
+
         if (root == null) {
             return null;
         }
@@ -174,55 +172,69 @@ public class ViterbiParsing {
 
     public static ArrayList<Subtrees> combinateSubtrees(ArrayList<Subtrees> left, ArrayList<Subtrees> right, Node root) {
         ArrayList<Subtrees> combined_subtrees = new ArrayList<Subtrees>();
-        ArrayList<Node> separateList = new ArrayList<Node>();
+//        ArrayList<Node> separateList = new ArrayList<Node>();
 
-        ArrayList<Node> leftNodeMix = new ArrayList<Node>();
-        ArrayList<Node> rightNodeMix = new ArrayList<Node>();
 //        ArrayList<Node> rightLeftNodeMix = new ArrayList<Node>();
+        if (left.isEmpty() && right.isEmpty()) {
+            ArrayList<Node> separateList = new ArrayList<Node>();
+            separateList.add(root.copyInto(new Node(null)));
+            Subtrees separate = new Subtrees(separateList);
+            combined_subtrees.add(separate);
+        }
 
-        Node clonedRoot = new Node(null);
-        root.copyInto(clonedRoot);
-        separateList.add(clonedRoot);
         for (Subtrees sub : left) {
+            ArrayList<Node> leftNodeMix = new ArrayList<Node>();
+            ArrayList<Node> separateList = new ArrayList<Node>();
+            separateList.add(root.copyInto(new Node(null)));
             separateList.addAll(sub.getSubtrees());
+            Subtrees separate = new Subtrees(separateList);
+            combined_subtrees.add(separate);
             for (Node node : sub.getSubtrees()) {
-                Node clonedRoot_modified = new Node(null);
-                root.copyInto(clonedRoot_modified);
+                Node clonedRoot = new Node(null);
+                root.copyInto(clonedRoot);
                 if (node.getClonedParent().equals(root)) {
-                    Node clonednode = new Node(null);
-                    node.copyInto(clonednode);
-                    clonedRoot_modified.getChildren().remove(0);
-                    clonedRoot_modified.getChildren().add(0, clonednode);
-                    clonednode.setParent(clonedRoot_modified);
-                    leftNodeMix.add(clonedRoot_modified);
-                    break;
+//                    Node clonednode = new Node(null);
+//                    node.copyInto(clonednode);
+                    clonedRoot.getChildren().remove(0);
+                    clonedRoot.getChildren().add(0, node);
+                    node.setParent(clonedRoot);
+                    leftNodeMix.add(clonedRoot);
+                } else {
+                    leftNodeMix.add(node);
                 }
+            }
+            if (!leftNodeMix.isEmpty()) {
+                Subtrees combinedLeft = new Subtrees(leftNodeMix);
+                combined_subtrees.add(combinedLeft);
             }
         }
         for (Subtrees sub : right) {
+            ArrayList<Node> rightNodeMix = new ArrayList<Node>();
+            ArrayList<Node> separateList = new ArrayList<Node>();
+            separateList.add(root.copyInto(new Node(null)));
             separateList.addAll(sub.getSubtrees());
+            Subtrees separate = new Subtrees(separateList);
+            combined_subtrees.add(separate);
             for (Node node : sub.getSubtrees()) {
-                Node clonedRoot_modified = new Node(null);
-                root.copyInto(clonedRoot_modified);
+                Node clonedRoot = new Node(null);
+                root.copyInto(clonedRoot);
                 if (node.getClonedParent().equals(root)) {
-                    Node clonednode = new Node(null);
-                    node.copyInto(clonednode);
-                    clonedRoot_modified.getChildren().remove(1);
-                    clonedRoot_modified.getChildren().add(1, clonednode);
-                    clonednode.setParent(clonedRoot_modified);
-                    rightNodeMix.add(clonedRoot_modified);
-                    break;
+//                    Node clonednode = new Node(null);
+//                    node.copyInto(clonednode);
+                    clonedRoot.getChildren().remove(1);
+                    clonedRoot.getChildren().add(1, node);
+                    node.setParent(clonedRoot);
+                    rightNodeMix.add(clonedRoot);
+                } else {
+                    rightNodeMix.add(node);
                 }
             }
+            if (!rightNodeMix.isEmpty()) {
+                Subtrees combinedRight = new Subtrees(rightNodeMix);
+                combined_subtrees.add(combinedRight);
+            }
         }
-        Subtrees combinedLeft = new Subtrees(leftNodeMix);
-        Subtrees combinedRight = new Subtrees(rightNodeMix);
-        combined_subtrees.add(combinedLeft);
-        combined_subtrees.add(combinedRight);
-        
-        Subtrees separate = new Subtrees(separateList);
-        combined_subtrees.add(separate);
-        
+
         return combined_subtrees;
     }
 

@@ -78,7 +78,7 @@ public class Node {
         }
     }
     
-    public void copyInto(Node twin)
+    public Node copyInto(Node twin)
     {
         twin.value = this.value;
         twin.clonedParent = this.getParent();
@@ -89,6 +89,7 @@ public class Node {
             Node child = new Node(this.children.get(i).getValue());
             twin.addChild(child);
         }
+        return twin;
     }
 
     public void setChildren(ArrayList<Node> children) {
