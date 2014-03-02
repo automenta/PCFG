@@ -142,39 +142,87 @@ public class ViterbiParsing {
         ViterbiParse(rootNode, 0, sentenceTokens.length - 1, root);
         //Now the node parent is the head of the parse tree for the input sentence
         PrintParseTree(root, "");
-        extractSubtrees(root);
+        System.out.println("********");
+        
+        //*************************************************//
+        ArrayList<Subtrees> subtrees_list = extractSubsetOfSubtrees(root);
+        for(Subtrees subtreesSubSet:subtrees_list)
+        {
+            for(Node node: subtreesSubSet.getSubtrees())
+            {
+                PrintParseTree(node, "");
+            }
+            System.out.println("----");
+        }
+        //*************************************************//
     }
 
-    public static ArrayList<Subtrees> extractSubtrees(Node root) {
+    public static ArrayList<Subtrees> extractSubsetOfSubtrees(Node root) {
         if (root == null) {
             return null;
         }
         ArrayList<Subtrees> left = new ArrayList<Subtrees>();
         ArrayList<Subtrees> right = new ArrayList<Subtrees>();
         if (!root.getChildren().get(0).getChildren().isEmpty()) {
-            left = extractSubtrees(root.getChildren().get(0));
+            left = extractSubsetOfSubtrees(root.getChildren().get(0));
         }
         if (!root.getChildren().get(1).getChildren().isEmpty()) {
-            right = extractSubtrees(root.getChildren().get(1));
+            right = extractSubsetOfSubtrees(root.getChildren().get(1));
         }
         return combinateSubtrees(left, right, root);
     }
 
     public static ArrayList<Subtrees> combinateSubtrees(ArrayList<Subtrees> left, ArrayList<Subtrees> right, Node root) {
         ArrayList<Subtrees> combined_subtrees = new ArrayList<Subtrees>();
-        //keep them separate
         ArrayList<Node> separateList = new ArrayList<Node>();
-        separateList.add(root);
+
+        ArrayList<Node> leftNodeMix = new ArrayList<Node>();
+        ArrayList<Node> rightNodeMix = new ArrayList<Node>();
+//        ArrayList<Node> rightLeftNodeMix = new ArrayList<Node>();
+
+        Node clonedRoot = new Node(null);
+        root.copyInto(clonedRoot);
+        separateList.add(clonedRoot);
         for (Subtrees sub : left) {
             separateList.addAll(sub.getSubtrees());
+            for (Node node : sub.getSubtrees()) {
+                Node clonedRoot_modified = new Node(null);
+                root.copyInto(clonedRoot_modified);
+                if (node.getClonedParent().equals(root)) {
+                    Node clonednode = new Node(null);
+                    node.copyInto(clonednode);
+                    clonedRoot_modified.getChildren().remove(0);
+                    clonedRoot_modified.getChildren().add(0, clonednode);
+                    clonednode.setParent(clonedRoot_modified);
+                    leftNodeMix.add(clonedRoot_modified);
+                    break;
+                }
+            }
         }
-        for (Subtrees sub : left) {
+        for (Subtrees sub : right) {
             separateList.addAll(sub.getSubtrees());
+            for (Node node : sub.getSubtrees()) {
+                Node clonedRoot_modified = new Node(null);
+                root.copyInto(clonedRoot_modified);
+                if (node.getClonedParent().equals(root)) {
+                    Node clonednode = new Node(null);
+                    node.copyInto(clonednode);
+                    clonedRoot_modified.getChildren().remove(1);
+                    clonedRoot_modified.getChildren().add(1, clonednode);
+                    clonednode.setParent(clonedRoot_modified);
+                    rightNodeMix.add(clonedRoot_modified);
+                    break;
+                }
+            }
         }
+        Subtrees combinedLeft = new Subtrees(leftNodeMix);
+        Subtrees combinedRight = new Subtrees(rightNodeMix);
+        combined_subtrees.add(combinedLeft);
+        combined_subtrees.add(combinedRight);
+        
         Subtrees separate = new Subtrees(separateList);
         combined_subtrees.add(separate);
-
-        //combined them
+        
         return combined_subtrees;
     }
 

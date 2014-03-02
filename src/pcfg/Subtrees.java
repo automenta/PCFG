@@ -13,5 +13,4 @@ public class Subtrees {
     public ArrayList<Node> getSubtrees() {
         return subtrees;
     }
-    
 }
