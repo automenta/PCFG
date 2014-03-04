@@ -85,11 +85,11 @@ public class ViterbiParsing {
 //            printTreeBeta(nodes_list.get(0));
         }
         convertCountsToProbs(); // if we don't run this, the map is "rule,count" map
-//                printRulesProbs("S-BAR");
+//                printRulesProbs("NNS");
 //        CKY("Its maximum velocity is 72 mph.", "S"); //calls CKY to find the most probable parse tree starting at "S"
-        CKY("And expect slower UNK-LC-s.", "S"); 
 //        CKY("The minimum unit is $ 100,000.", "S");
-//        CKY("Mr. Tomash will remain as a director emeritus.", "S");
+//        CKY("And expect slower UNK-LC-s.", "S"); 
+        CKY("Mr. Tomash will remain as a director emeritus.", "S");
     }
 
     /*
@@ -115,7 +115,7 @@ public class ViterbiParsing {
      */
     public static void CKY(String sentence, String rootNode) {
         sentence = sentence.substring(0, sentence.length() - 1) + " " + sentence.charAt(sentence.length() - 1);
-        String sentenceTokens[] = sentence.toLowerCase().split(" ");
+        String sentenceTokens[] = sentence.split(" ");
         //initialize the piTable for each potenial root
         for (String root : rules_probs_map.keySet()) {
             float piTable[][] = new float[sentenceTokens.length][sentenceTokens.length];
@@ -141,19 +141,19 @@ public class ViterbiParsing {
                 }
             }
         }
+        
         Node root = new Node(rootNode);
         ViterbiParse(rootNode, 0, sentenceTokens.length - 1, root);
-        //Now the node parent is the head of the parse tree for the input sentence
-//        PrintParseTree(root, "");
+        PrintParseTree(root, "");
 
         //***********Extracts Subtrees of Parse Tree*******//
-//        ArrayList<Subtrees> subtrees_list = extractSubsetOfSubtrees(root);
-//        for (Subtrees subtreesSubSet : subtrees_list) {
-//            for (Node node : subtreesSubSet.getSubtrees()) {
-//                PrintParseTree(node, "");
-//            }
-//            System.out.println("----");
-//        }
+        ArrayList<Subtrees> subtrees_list = extractSubsetOfSubtrees(root);
+        for (Subtrees subtreesSubSet : subtrees_list) {
+            for (Node node : subtreesSubSet.getSubtrees()) {
+                PrintParseTree(node, "");
+            }
+            System.out.println("----");
+        }
         //*************************************************//
     }
 
