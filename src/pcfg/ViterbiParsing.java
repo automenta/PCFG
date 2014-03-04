@@ -21,7 +21,7 @@ public class ViterbiParsing {
         Scanner sc = new Scanner(new File(file.getParentFile().getParent() + "\\resource\\cnf.txt"));
         while (sc.hasNextLine()) {
             String sentence = "";
-            Node root = new Node("TOP");
+            Node root = new Node("S");
             String line = sc.nextLine();
 //            System.out.println(line);
             ArrayList<Integer> index_openBrackets = new ArrayList<Integer>();
@@ -85,8 +85,11 @@ public class ViterbiParsing {
 //            printTreeBeta(nodes_list.get(0));
         }
         convertCountsToProbs(); // if we don't run this, the map is "rule,count" map
-        //        printRulesProbs("NP".toLowerCase());
-        CKY("Its maximum velocity is 72 mph.", "S"); //calls CKY to find the most probable parse tree starting at "S"
+//                printRulesProbs("S-BAR");
+//        CKY("Its maximum velocity is 72 mph.", "S"); //calls CKY to find the most probable parse tree starting at "S"
+        CKY("And expect slower UNK-LC-s.", "S"); 
+//        CKY("The minimum unit is $ 100,000.", "S");
+//        CKY("Mr. Tomash will remain as a director emeritus.", "S");
     }
 
     /*
@@ -141,138 +144,17 @@ public class ViterbiParsing {
         Node root = new Node(rootNode);
         ViterbiParse(rootNode, 0, sentenceTokens.length - 1, root);
         //Now the node parent is the head of the parse tree for the input sentence
-        //PrintParseTree(root, "");
+//        PrintParseTree(root, "");
 
+        //***********Extracts Subtrees of Parse Tree*******//
+//        ArrayList<Subtrees> subtrees_list = extractSubsetOfSubtrees(root);
+//        for (Subtrees subtreesSubSet : subtrees_list) {
+//            for (Node node : subtreesSubSet.getSubtrees()) {
+//                PrintParseTree(node, "");
+//            }
+//            System.out.println("----");
+//        }
         //*************************************************//
-        ArrayList<Subtrees> subtrees_list = extractSubsetOfSubtrees(root);
-        for (Subtrees subtreesSubSet : subtrees_list) {
-            for (Node node : subtreesSubSet.getSubtrees()) {
-                PrintParseTree(node, "");
-            }
-            System.out.println("----");
-        }
-        //*************************************************//
-    }
-
-    public static ArrayList<Subtrees> extractSubsetOfSubtrees(Node root) {
-
-        if (root == null) {
-            return null;
-        }
-        ArrayList<Subtrees> left = new ArrayList<Subtrees>();
-        ArrayList<Subtrees> right = new ArrayList<Subtrees>();
-        if (!root.getChildren().get(0).getChildren().isEmpty()) {
-            left = extractSubsetOfSubtrees(root.getChildren().get(0));
-        }
-        if (!root.getChildren().get(1).getChildren().isEmpty()) {
-            right = extractSubsetOfSubtrees(root.getChildren().get(1));
-        }
-        return combinateSubtrees(left, right, root);
-    }
-
-    public static ArrayList<Subtrees> combinateSubtrees(ArrayList<Subtrees> left, ArrayList<Subtrees> right, Node root) {
-        ArrayList<Subtrees> combined_subtrees = new ArrayList<Subtrees>();
-//        ArrayList<Node> separateList = new ArrayList<Node>();
-
-//        ArrayList<Node> rightLeftNodeMix = new ArrayList<Node>();
-        if (left.isEmpty() && right.isEmpty()) {
-            ArrayList<Node> separateList = new ArrayList<Node>();
-            separateList.add(root.copyInto(new Node(null)));
-            Subtrees separate = new Subtrees(separateList);
-            combined_subtrees.add(separate);
-        }
-
-        for (Subtrees sub : left) {
-            ArrayList<Node> leftNodeMix = new ArrayList<Node>();
-            ArrayList<Node> separateList = new ArrayList<Node>();
-            separateList.add(root.copyInto(new Node(null)));
-            separateList.addAll(sub.getSubtrees());
-            Subtrees separate = new Subtrees(separateList);
-            combined_subtrees.add(separate);
-            for (Node node : sub.getSubtrees()) {
-                Node clonedRoot = new Node(null);
-                root.copyInto(clonedRoot);
-                if (node.getClonedParent().equals(root)) {
-//                    Node clonednode = new Node(null);
-//                    node.copyInto(clonednode);
-                    clonedRoot.getChildren().remove(0);
-                    clonedRoot.getChildren().add(0, node);
-                    node.setParent(clonedRoot);
-                    leftNodeMix.add(clonedRoot);
-                } else {
-                    leftNodeMix.add(node);
-                }
-            }
-            if (!leftNodeMix.isEmpty()) {
-                Subtrees combinedLeft = new Subtrees(leftNodeMix);
-                combined_subtrees.add(combinedLeft);
-            }
-        }
-        for (Subtrees sub : right) {
-            ArrayList<Node> rightNodeMix = new ArrayList<Node>();
-            ArrayList<Node> separateList = new ArrayList<Node>();
-            separateList.add(root.copyInto(new Node(null)));
-            separateList.addAll(sub.getSubtrees());
-            Subtrees separate = new Subtrees(separateList);
-            combined_subtrees.add(separate);
-            for (Node node : sub.getSubtrees()) {
-                Node clonedRoot = new Node(null);
-                root.copyInto(clonedRoot);
-                if (node.getClonedParent().equals(root)) {
-//                    Node clonednode = new Node(null);
-//                    node.copyInto(clonednode);
-                    clonedRoot.getChildren().remove(1);
-                    clonedRoot.getChildren().add(1, node);
-                    node.setParent(clonedRoot);
-                    rightNodeMix.add(clonedRoot);
-                } else {
-                    rightNodeMix.add(node);
-                }
-            }
-            if (!rightNodeMix.isEmpty()) {
-                Subtrees combinedRight = new Subtrees(rightNodeMix);
-                combined_subtrees.add(combinedRight);
-            }
-        }
-
-        return combined_subtrees;
-    }
-
-    public static void PrintParseTree(Node root, String space) {
-        if (root == null) {
-            return;
-        }
-        System.out.println(space + root.getValue() + " -> " + root.getChildrenValues());
-        space += "\t";
-        if (!root.getChildren().get(0).getChildren().isEmpty()) {
-            PrintParseTree(root.getChildren().get(0), space);
-        }
-        if (root.getChildren().get(0).getChildren().isEmpty()) {
-            System.out.println(space + root.getChildren().get(0).getValue() + " -> Terminal");
-        }
-        if (!root.getChildren().get(1).getChildren().isEmpty()) {
-            PrintParseTree(root.getChildren().get(1), space);
-        }
-        if (root.getChildren().get(1).getChildren().isEmpty()) {
-            System.out.println(space + root.getChildren().get(1).getValue() + " -> Terminal");
-        }
-    }
-
-    public static void ViterbiParse(String root, int i, int j, Node parent) {
-        if (i == j) {
-            return;
-        }
-        String bpTable[][] = bpMap.get(root);
-        Node left_child = new Node(bpTable[i][j].split(" ")[0]);
-        left_child.setParent(parent);
-        parent.addChild(left_child);
-        Node right_child = new Node(bpTable[i][j].split(" ")[1]);
-        parent.addChild(right_child);
-        right_child.setParent(parent);
-
-//        System.out.println(root + "->" + bpTable[i][j]);
-        ViterbiParse(bpTable[i][j].split(" ")[0], i, Integer.parseInt(bpTable[i][j].split(" ")[2]), left_child);
-        ViterbiParse(bpTable[i][j].split(" ")[1], Integer.parseInt(bpTable[i][j].split(" ")[2]) + 1, j, right_child);
     }
 
     public static float PI(int i, int j, String treeHead) {
@@ -308,6 +190,165 @@ public class ViterbiParsing {
         piMap.put(treeHead, piTable_treeHead);
         piBooleanMap.put(treeHead, piBooleanTable_treeHead);
         return MAXprobab;
+    }
+
+    public static void ViterbiParse(String root, int i, int j, Node parent) {
+        if (i == j) {
+            return;
+        }
+        String bpTable[][] = bpMap.get(root);
+        Node left_child = new Node(bpTable[i][j].split(" ")[0]);
+        left_child.setParent(parent);
+        parent.addChild(left_child);
+        Node right_child = new Node(bpTable[i][j].split(" ")[1]);
+        parent.addChild(right_child);
+        right_child.setParent(parent);
+
+//        System.out.println(root + "->" + bpTable[i][j]);
+        ViterbiParse(bpTable[i][j].split(" ")[0], i, Integer.parseInt(bpTable[i][j].split(" ")[2]), left_child);
+        ViterbiParse(bpTable[i][j].split(" ")[1], Integer.parseInt(bpTable[i][j].split(" ")[2]) + 1, j, right_child);
+    }
+
+    public static void PrintParseTree(Node root, String space) {
+        if (root == null) {
+            return;
+        }
+        System.out.println(space + root.getValue() + " -> " + root.getChildrenValues());
+        space += "\t";
+        if (!root.getChildren().get(0).getChildren().isEmpty()) {
+            PrintParseTree(root.getChildren().get(0), space);
+        }
+        if (root.getChildren().get(0).getChildren().isEmpty()) {
+            System.out.println(space + root.getChildren().get(0).getValue() + " -> Terminal");
+        }
+        if (!root.getChildren().get(1).getChildren().isEmpty()) {
+            PrintParseTree(root.getChildren().get(1), space);
+        }
+        if (root.getChildren().get(1).getChildren().isEmpty()) {
+            System.out.println(space + root.getChildren().get(1).getValue() + " -> Terminal");
+        }
+    }
+
+    public static ArrayList<Subtrees> extractSubsetOfSubtrees(Node root) {
+
+        if (root == null) {
+            return null;
+        }
+        ArrayList<Subtrees> left = new ArrayList<Subtrees>();
+        ArrayList<Subtrees> right = new ArrayList<Subtrees>();
+        if (!root.getChildren().get(0).getChildren().isEmpty()) {
+            left = extractSubsetOfSubtrees(root.getChildren().get(0));
+        }
+        if (!root.getChildren().get(1).getChildren().isEmpty()) {
+            right = extractSubsetOfSubtrees(root.getChildren().get(1));
+        }
+        return combinateSubtrees(left, right, root);
+    }
+
+    public static ArrayList<Subtrees> combinateSubtrees(ArrayList<Subtrees> left, ArrayList<Subtrees> right, Node root) {
+        if (left.isEmpty() && right.isEmpty()) {
+            ArrayList<Subtrees> merged_subtrees_set = new ArrayList<Subtrees>();
+            ArrayList<Node> separateList = new ArrayList<Node>();
+            separateList.add(root.copyInto(new Node(null)));
+            Subtrees separate = new Subtrees(separateList);
+            merged_subtrees_set.add(separate);
+            return merged_subtrees_set;
+        } else {
+            ArrayList<Subtrees> left_subtrees = new ArrayList<Subtrees>();
+            ArrayList<Subtrees> right_subtrees = new ArrayList<Subtrees>();
+            for (Subtrees sub : left) {
+                ArrayList<Node> leftNodeMix = new ArrayList<Node>();
+                ArrayList<Node> separateList = new ArrayList<Node>();
+                separateList.add(root.copyInto(new Node(null)));
+                separateList.addAll(sub.getSubtrees());
+                Subtrees separate = new Subtrees(separateList);
+                left_subtrees.add(separate);
+                for (Node node : sub.getSubtrees()) {
+                    Node clonedRoot = new Node(null);
+                    root.copyInto(clonedRoot);
+                    if (node.getClonedParent().equals(root)) {
+                        clonedRoot.getChildren().remove(0);
+                        clonedRoot.getChildren().add(0, node);
+                        node.setParent(clonedRoot);
+                        leftNodeMix.add(clonedRoot);
+                    } else {
+                        leftNodeMix.add(node);
+                    }
+                }
+                if (!leftNodeMix.isEmpty()) {
+                    Subtrees combinedLeft = new Subtrees(leftNodeMix);
+                    left_subtrees.add(combinedLeft);
+                }
+            }
+            for (Subtrees sub : right) {
+                ArrayList<Node> rightNodeMix = new ArrayList<Node>();
+                ArrayList<Node> separateList = new ArrayList<Node>();
+                separateList.add(root.copyInto(new Node(null)));
+                separateList.addAll(sub.getSubtrees());
+                Subtrees separate = new Subtrees(separateList);
+                right_subtrees.add(separate);
+                for (Node node : sub.getSubtrees()) {
+                    Node clonedRoot = new Node(null);
+                    root.copyInto(clonedRoot);
+                    if (node.getClonedParent().equals(root)) {
+                        clonedRoot.getChildren().remove(1);
+                        clonedRoot.getChildren().add(1, node);
+                        node.setParent(clonedRoot);
+                        rightNodeMix.add(clonedRoot);
+                    } else {
+                        rightNodeMix.add(node);
+                    }
+                }
+                if (!rightNodeMix.isEmpty()) {
+                    Subtrees combinedRight = new Subtrees(rightNodeMix);
+                    right_subtrees.add(combinedRight);
+                }
+            }
+            return mergeLeftRight(left_subtrees, right_subtrees, root);
+        }
+    }
+
+    public static ArrayList<Subtrees> mergeLeftRight(ArrayList<Subtrees> left_subtrees, ArrayList<Subtrees> right_subtrees, Node root) {
+        ArrayList<Subtrees> merged_subtrees_set = new ArrayList<Subtrees>();
+
+        if (left_subtrees.isEmpty()) {
+            merged_subtrees_set.addAll(right_subtrees);
+            return merged_subtrees_set;
+        }
+        if (right_subtrees.isEmpty()) {
+            merged_subtrees_set.addAll(left_subtrees);
+            return merged_subtrees_set;
+        } else {
+            for (Subtrees left_sub : left_subtrees) {
+                for (Subtrees right_sub : right_subtrees) {
+                    ArrayList<Node> nodeList = new ArrayList<Node>();
+                    Node left_bridge = new Node(null);
+                    for (Node node : left_sub.getSubtrees()) {
+                        if (!node.getOriginal().equals(root)) {
+                            nodeList.add(node);
+                        } else {
+                            left_bridge.copy(node);
+                        }
+                    }
+                    Node right_bridge = new Node(null);
+                    for (Node node : right_sub.getSubtrees()) {
+                        if (!node.getOriginal().equals(root)) {
+                            nodeList.add(node);
+                        } else {
+                            right_bridge.copy(node);
+                        }
+                    }
+                    Node left = new Node("LEFT");
+                    left.copy(left_bridge.getChildren().get(0));
+                    right_bridge.getChildren().remove(0); //XXXXXXXXXXX
+                    right_bridge.getChildren().add(0, left); //XXXXXXXXXXXXX
+                    nodeList.add(right_bridge);
+                    Subtrees combined = new Subtrees(nodeList);
+                    merged_subtrees_set.add(combined);
+                }
+            }
+            return merged_subtrees_set;
+        }
     }
 
     public static void printRulesProbs(String nonterminal) {
