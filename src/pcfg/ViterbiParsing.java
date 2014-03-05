@@ -144,9 +144,13 @@ public class ViterbiParsing {
 
         Node root = new Node(rootNode);
         ViterbiParse(rootNode, 0, sentenceTokens.length - 1, root);
-//        PrintParseTree(root, "");
-
-        //***********Categorizes Subtrees of Parse Tree to CFGOnly and SubtreeOnly******//
+        System.out.println("/////////Parse Tree for: \"" +sentence+"\" ////////////////");
+        PrintParseTree(root, "");
+        System.out.println("/////////////////////////////////////////////////////////////////////////");
+        System.out.println();
+        
+        System.out.println("/////////Subtrees of the Parse Tree of: \"" +sentence+"\" ////////////////");
+//        //***********Categorizes Subtrees of Parse Tree to CFGOnly and SubtreeOnly******//
         ArrayList<Subtrees> subtrees_list = extractSubsetOfSubtrees(root);
         for (Subtrees subtreesSubSet : subtrees_list) {
             for (Node node : subtreesSubSet.getSubtrees()) {
@@ -156,20 +160,12 @@ public class ViterbiParsing {
                 if (node.getChildren().get(0).getChildren().isEmpty() && node.getChildren().get(1).getChildren().isEmpty()) {
                     subtreesSubSet.setOnlySubtrees(false);
                 }
-//                PrintParseTree(node, "");
+                PrintParseTree(node, "");
             }
-//            System.out.println("----");
-        }
-
-        for (Subtrees subtreesSubSet : subtrees_list) {
-            if (subtreesSubSet.isOnlySubtrees()) {
-                for (Node node : subtreesSubSet.getSubtrees()) {
-                    PrintParseTree(node, "");
-                }
-                System.out.println("----");
-            }
+            System.out.println("----");
         }
         //*************************************************//
+        System.out.println("/////////////////////////////////////////////////////////////////////////");
     }
 
     public static float PI(int i, int j, String treeHead) {
