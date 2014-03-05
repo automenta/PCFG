@@ -86,10 +86,10 @@ public class ViterbiParsing {
         }
         convertCountsToProbs(); // if we don't run this, the map is "rule,count" map
 //                printRulesProbs("NNS");
-//        CKY("Its maximum velocity is 72 mph.", "S"); //calls CKY to find the most probable parse tree starting at "S"
+        CKY("Its maximum velocity is 72 mph.", "S"); //calls CKY to find the most probable parse tree starting at "S"
 //        CKY("The minimum unit is $ 100,000.", "S");
 //        CKY("And expect slower UNK-LC-s.", "S"); 
-        CKY("Mr. Tomash will remain as a director emeritus.", "S");
+//        CKY("Mr. Tomash will remain as a director emeritus.", "S");
     }
 
     /*
@@ -141,18 +141,33 @@ public class ViterbiParsing {
                 }
             }
         }
-        
+
         Node root = new Node(rootNode);
         ViterbiParse(rootNode, 0, sentenceTokens.length - 1, root);
-        PrintParseTree(root, "");
+//        PrintParseTree(root, "");
 
-        //***********Extracts Subtrees of Parse Tree*******//
+        //***********Categorizes Subtrees of Parse Tree to CFGOnly and SubtreeOnly******//
         ArrayList<Subtrees> subtrees_list = extractSubsetOfSubtrees(root);
         for (Subtrees subtreesSubSet : subtrees_list) {
             for (Node node : subtreesSubSet.getSubtrees()) {
-                PrintParseTree(node, "");
+                if (!node.getChildren().get(0).getChildren().isEmpty() || !node.getChildren().get(1).getChildren().isEmpty()) {
+                    subtreesSubSet.setOnlyCFGRules(false);
+                }
+                if (node.getChildren().get(0).getChildren().isEmpty() && node.getChildren().get(1).getChildren().isEmpty()) {
+                    subtreesSubSet.setOnlySubtrees(false);
+                }
+//                PrintParseTree(node, "");
             }
-            System.out.println("----");
+//            System.out.println("----");
+        }
+
+        for (Subtrees subtreesSubSet : subtrees_list) {
+            if (subtreesSubSet.isOnlySubtrees()) {
+                for (Node node : subtreesSubSet.getSubtrees()) {
+                    PrintParseTree(node, "");
+                }
+                System.out.println("----");
+            }
         }
         //*************************************************//
     }
