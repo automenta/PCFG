@@ -18,7 +18,7 @@ public class ViterbiParsing {
 
     public static void main(String[] args) throws FileNotFoundException, URISyntaxException {
         File file = new File(Thread.currentThread().getContextClassLoader().getResource("").toURI());
-        Scanner sc = new Scanner(new File(file.getParentFile().getParent() + "\\resource\\training.txt"));
+        Scanner sc = new Scanner(new File(file.getParentFile().getParent() + "\\resource\\cnf.txt"));
         while (sc.hasNextLine()) {
             String sentence = "";
             Node root = new Node("S");
