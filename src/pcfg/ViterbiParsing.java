@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Scanner;
@@ -17,8 +18,33 @@ public class ViterbiParsing {
     private static final Map<String, Node> sentence_tree_map = new HashMap<String, Node>(); // for storing each sentences parse tree
 
     public static void main(String[] args) throws FileNotFoundException, URISyntaxException {
+        
+        initGrammar();
+
+        
+        //printRulesProbs("S");
+        
+        //calls CKY to find the most probable parse tree starting at "S"
+        CKY("maximum velocity", "NP-BAR", false); 
+        CKY("maximum *", "NP-BAR", false); 
+        //CKY("maximum velocity", "S", false); 
+        
+        //CKY("The minimum unit is $ 100,000 .", "S", false);
+        CKY("The minimum unit * $ 100,000 .", "S", false);
+        CKY("* minimum unit * $ 100,000 .", "S", false);
+        //CKY("The minimum unit was $ 10,000 .", "S", false);
+        
+        CKY("3f83h9f", "S", false);
+        
+        //CKY("The minimum unit is $ 100,000.", "S", false);
+//        CKY("And expect slower UNK-LC-s.", "S"); 
+//        CKY("Mr. Tomash will remain as a director emeritus.", "S");
+    }
+
+    public static void initGrammar() throws FileNotFoundException, URISyntaxException {
         File file = new File(Thread.currentThread().getContextClassLoader().getResource("").toURI());
-        Scanner sc = new Scanner(new File(file.getParentFile().getParent() + "\\resource\\cnf.txt"));
+        Scanner sc = new Scanner(new File(file.getParentFile().getParent() + "/resource/cnf.txt"));
+        
         while (sc.hasNextLine()) {
             String sentence = "";
             Node root = new Node("S");
@@ -85,13 +111,8 @@ public class ViterbiParsing {
 //            printTreeBeta(nodes_list.get(0));
         }
         convertCountsToProbs(); // if we don't run this, the map is "rule,count" map
-//                printRulesProbs("NNS");
-        CKY("Its maximum velocity is 72 mph.", "S"); //calls CKY to find the most probable parse tree starting at "S"
-//        CKY("The minimum unit is $ 100,000.", "S");
-//        CKY("And expect slower UNK-LC-s.", "S"); 
-//        CKY("Mr. Tomash will remain as a director emeritus.", "S");
+        
     }
-
     /*
      * Takes rules and their counts Map and converts it to rules and probs Map
      * a.k.a : generates PCFG
@@ -108,25 +129,38 @@ public class ViterbiParsing {
         }
     }
 
+    public static String[] tokenize(String s) {
+        return s.split(" ");
+    }
     /*
      * Assuming the CGF is in CNF form
      * CKY finds the most probable parse tree
      * for the given sentence
      */
-    public static void CKY(String sentence, String rootNode) {
-        sentence = sentence.substring(0, sentence.length() - 1) + " " + sentence.charAt(sentence.length() - 1);
-        String sentenceTokens[] = sentence.split(" ");
+    public static void CKY(String sentence, String rootNode, boolean subtrees) {
+        String sentenceTokens[] = tokenize(sentence);
+        
+        
         //initialize the piTable for each potenial root
         for (String root : rules_probs_map.keySet()) {
+            
             float piTable[][] = new float[sentenceTokens.length][sentenceTokens.length];
             String bpTable[][] = new String[sentenceTokens.length][sentenceTokens.length];
             boolean piBooleanTable[][] = new boolean[sentenceTokens.length][sentenceTokens.length];
+            
             for (int i = 0; i < sentenceTokens.length; i++) {
-                ArrayList<String> child = new ArrayList<String>();
-                child.add(sentenceTokens[i]);
-                if (rules_probs_map.get(root).containsKey(child)) {
-                    piTable[i][i] = rules_probs_map.get(root).get(child); // returns the probability of this rule
+                boolean wildcard = sentenceTokens[i].equals("*");
+                if (wildcard) {
+                    piTable[i][i] = 1.0f;
                     piBooleanTable[i][i] = true;
+                }
+                else {
+                    ArrayList<String> child = new ArrayList<String>();
+                    child.add(sentenceTokens[i]);
+                    if (rules_probs_map.get(root).containsKey(child)) {
+                        piTable[i][i] = rules_probs_map.get(root).get(child); // returns the probability of this rule
+                        piBooleanTable[i][i] = true;
+                    }
                 }
             }
             piMap.put(root, piTable);
@@ -142,30 +176,34 @@ public class ViterbiParsing {
             }
         }
 
+        
         Node root = new Node(rootNode);
         ViterbiParse(rootNode, 0, sentenceTokens.length - 1, root);
-        System.out.println("/////////Parse Tree for: \"" +sentence+"\" ////////////////");
+        System.out.println("/////////Parse Tree for: \"" + sentence + "\" ////////////////");
         PrintParseTree(root, "");
         System.out.println("/////////////////////////////////////////////////////////////////////////");
         System.out.println();
-        
-        System.out.println("/////////Subtrees of the Parse Tree of: \"" +sentence+"\" ////////////////");
-//        //***********Categorizes Subtrees of Parse Tree to CFGOnly and SubtreeOnly******//
-        ArrayList<Subtrees> subtrees_list = extractSubsetOfSubtrees(root);
-        for (Subtrees subtreesSubSet : subtrees_list) {
-            for (Node node : subtreesSubSet.getSubtrees()) {
-                if (!node.getChildren().get(0).getChildren().isEmpty() || !node.getChildren().get(1).getChildren().isEmpty()) {
-                    subtreesSubSet.setOnlyCFGRules(false);
+
+        if (subtrees) {
+            System.out.println("/////////Subtrees of the Parse Tree of: \"" + sentence + "\" ////////////////");
+    //        //***********Categorizes Subtrees of Parse Tree to CFGOnly and SubtreeOnly******//
+            ArrayList<Subtrees> subtrees_list = extractSubsetOfSubtrees(root);
+            for (Subtrees subtreesSubSet : subtrees_list) {
+                for (Node node : subtreesSubSet.getSubtrees()) {
+                    if (!node.getChildren().get(0).getChildren().isEmpty() || !node.getChildren().get(1).getChildren().isEmpty()) {
+                        subtreesSubSet.setOnlyCFGRules(false);
+                    }
+                    if (node.getChildren().get(0).getChildren().isEmpty() && node.getChildren().get(1).getChildren().isEmpty()) {
+                        subtreesSubSet.setOnlySubtrees(false);
+                    }
+                    PrintParseTree(node, "");
                 }
-                if (node.getChildren().get(0).getChildren().isEmpty() && node.getChildren().get(1).getChildren().isEmpty()) {
-                    subtreesSubSet.setOnlySubtrees(false);
-                }
-                PrintParseTree(node, "");
+                System.out.println("----");
             }
-            System.out.println("----");
+            //*************************************************//
+            System.out.println("/////////////////////////////////////////////////////////////////////////");
         }
-        //*************************************************//
-        System.out.println("/////////////////////////////////////////////////////////////////////////");
+        
     }
 
     public static float PI(int i, int j, String treeHead) {
@@ -208,35 +246,56 @@ public class ViterbiParsing {
             return;
         }
         String bpTable[][] = bpMap.get(root);
-        Node left_child = new Node(bpTable[i][j].split(" ")[0]);
+
+        
+        String[] split = null;
+        if (bpTable!=null) {
+            String b = bpTable[i][j];           
+            if (b!=null) split = b.split(" ");        
+        }
+        
+        if (split == null || split.length!=3) {
+            
+            /*System.err.println(" " + root + " " + i + " " + j + " " + parent + " -> " + Arrays.toString(split));
+            split = new String[] { "N","",Integer.toString(i) };*/
+            return;
+                    
+        }
+        Node left_child = new Node(split[0]);
         left_child.setParent(parent);
         parent.addChild(left_child);
-        Node right_child = new Node(bpTable[i][j].split(" ")[1]);
+        Node right_child = new Node(split[1]);
         parent.addChild(right_child);
         right_child.setParent(parent);
 
 //        System.out.println(root + "->" + bpTable[i][j]);
-        ViterbiParse(bpTable[i][j].split(" ")[0], i, Integer.parseInt(bpTable[i][j].split(" ")[2]), left_child);
-        ViterbiParse(bpTable[i][j].split(" ")[1], Integer.parseInt(bpTable[i][j].split(" ")[2]) + 1, j, right_child);
+        ViterbiParse(split[0], i, Integer.parseInt(split[2]), left_child);
+        ViterbiParse(split[1], Integer.parseInt(split[2]) + 1, j, right_child);
     }
 
     public static void PrintParseTree(Node root, String space) {
         if (root == null) {
             return;
         }
+
         System.out.println(space + root.getValue() + " -> " + root.getChildrenValues());
         space += "\t";
-        if (!root.getChildren().get(0).getChildren().isEmpty()) {
-            PrintParseTree(root.getChildren().get(0), space);
+        final ArrayList<Node> ch = root.getChildren();
+        if (ch.size() >= 1) {
+            if (!ch.get(0).getChildren().isEmpty()) {
+                PrintParseTree(ch.get(0), space);
+            }
+            if (ch.get(0).getChildren().isEmpty()) {
+                System.out.println(space + ch.get(0).getValue() + " -> Terminal");
+            }
         }
-        if (root.getChildren().get(0).getChildren().isEmpty()) {
-            System.out.println(space + root.getChildren().get(0).getValue() + " -> Terminal");
-        }
-        if (!root.getChildren().get(1).getChildren().isEmpty()) {
-            PrintParseTree(root.getChildren().get(1), space);
-        }
-        if (root.getChildren().get(1).getChildren().isEmpty()) {
-            System.out.println(space + root.getChildren().get(1).getValue() + " -> Terminal");
+        if (ch.size() == 2) {
+            if (!ch.get(1).getChildren().isEmpty()) {
+                PrintParseTree(ch.get(1), space);
+            }
+            if (ch.get(1).getChildren().isEmpty()) {
+                System.out.println(space + ch.get(1).getValue() + " -> Terminal");
+            }
         }
     }
 
